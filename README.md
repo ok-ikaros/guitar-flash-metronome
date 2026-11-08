@@ -8,6 +8,10 @@ that's the chord.
 No build step. Open `index.html` in a browser, or host the folder as a static
 site (GitHub Pages works: Settings → Pages → deploy from branch, root folder).
 
+`node scripts/build-artifact.js` writes `dist/artifact.html`, a single-file
+fragment of the same app for hosts that take one HTML snippet, such as a
+Claude artifact.
+
 ## Two modes
 
 | Mode | You see | You answer | Reveal shows |
@@ -15,7 +19,8 @@ site (GitHub Pages works: Settings → Pages → deploy from branch, root folder
 | **Name it** | Form + position, with the fret diagram | The chord name | The chord name |
 | **Find the position** | Chord name + form, diagram with the fret number hidden | Where to bar it | The position (both of them if the range goes past the 12th fret) |
 
-Each card lives for *N* measures (default 2). With **Auto-reveal** on, the
+The metronome counts in one measure (configurable, 0–4) before the first
+card. Each card lives for *N* measures (default 2). With **Auto-reveal** on, the
 answer appears on the last measure of the card, so you answer on measure 1,
 check on measure 2, and the next card arrives on the next downbeat. You never
 have to stop the click. **Pause** (Space), **Reveal** (R) and **Next** (N) are
@@ -25,8 +30,9 @@ there for when you do.
 
 - **Tempo**: 30–240 BPM via slider, number box, ± buttons, Tap, or the ↑/↓ keys (Shift for ±5).
 - **Beats per measure**: 1–12, beat 1 accented (optional).
+- **Count-in**: 0–4 measures.
 - **New card every** 1–16 measures.
-- **Forms in rotation**: any subset of C, A, G, E, D.
+- **Forms in rotation**: any subset of C, A, G, E, D. Starts with the C form only.
 - **Highest position**: 1–15. Position 0 (open) is always included.
 - **Naming**: sharps (counting up), flats (counting down), or mixed.
 - **Click sound / volume / screen flash / keep screen awake**.

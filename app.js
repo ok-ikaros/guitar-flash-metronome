@@ -11,9 +11,10 @@
     bpm: 80,
     beats: 4,
     changeEvery: 2,
+    countIn: 1,              // measures of count-in before the first card
     mode: 'name',            // 'name' | 'find'
     accidentals: 'sharps',   // 'sharps' | 'flats' | 'mixed'
-    forms: { C: true, A: true, G: true, E: true, D: true },
+    forms: { C: true, A: false, G: false, E: false, D: false },
     maxPosition: 12,
     autoReveal: true,
     accent: true,
@@ -67,12 +68,12 @@
       if (this.ctx.state === 'suspended') this.ctx.resume();
     }
 
-    start() {
+    start(skipCountIn) {
       if (this.running) return;
       this.ensureContext();
       this.running = true;
       this.beat = 0;            // 0-based beat within the measure
-      this.measure = 0;         // 0-based measure count since start
+      this.measure = skipCountIn ? S.countIn : 0; // measures < countIn are the count-in
       this.nextTime = this.ctx.currentTime + 0.08;
       this.queue = [];
       this.tick();
@@ -162,6 +163,16 @@
     renderCard();
   }
 
+  function renderCountIn(beat) {
+    $('modeTag').textContent = 'Count-in';
+    $('measureTag').textContent = 'Get ready';
+    $('prompt').innerHTML = `${beat + 1}<small>${S.mode === 'name' ? 'Name the chord' : 'Find the position'}</small>`;
+    $('answer').className = 'answer hidden';
+    $('diagram').innerHTML = '';
+    $('revealBtn').disabled = true;
+    $('nextBtn').disabled = true;
+  }
+
   function renderCard() {
     const prompt = $('prompt');
     const answer = $('answer');
@@ -221,16 +232,16 @@
 
     let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${CE.formLabel(form, position)}">`;
     s += `<style>
-      .st{stroke:#9aa1ad;stroke-width:1.2}
-      .fr{stroke:#555b66;stroke-width:1.2}
-      .nut{stroke:#ecedf0;stroke-width:5;stroke-linecap:round}
-      .bar{fill:#ecedf0}
-      .dot{fill:#f2b544}
-      .num{fill:#1a1200;font:700 11px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
-      .mark{fill:#9aa1ad;font:600 12px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
-      .open{fill:none;stroke:#9aa1ad;stroke-width:1.5}
-      .pos{fill:#ecedf0;font:700 15px system-ui,sans-serif;text-anchor:end;dominant-baseline:central}
-      .pos.q{fill:#f2b544}
+      .st{stroke:var(--muted);stroke-width:1.2}
+      .fr{stroke:var(--line);stroke-width:1.2}
+      .nut{stroke:var(--text);stroke-width:5;stroke-linecap:round}
+      .bar{fill:var(--text)}
+      .dot{fill:var(--accent)}
+      .num{fill:var(--accent-ink);font:700 11px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+      .mark{fill:var(--muted);font:600 12px system-ui,sans-serif;text-anchor:middle;dominant-baseline:central}
+      .open{fill:none;stroke:var(--muted);stroke-width:1.5}
+      .pos{fill:var(--text);font:700 15px system-ui,sans-serif;text-anchor:end;dominant-baseline:central}
+      .pos.q{fill:var(--accent)}
     </style>`;
 
     // frets
@@ -297,9 +308,15 @@
 
   // ----------------------------------------------------------- beat handling
   function onBeat({ beat, measure }) {
-    const cycle = Math.max(1, S.changeEvery);
-    const inCycle = measure % cycle;          // 0 .. cycle-1
     const isFirst = beat === 0;
+    if (measure < S.countIn) {
+      renderCountIn(beat);
+      renderBeatDots(beat);
+      flash(isFirst && S.accent && S.beats > 1);
+      return;
+    }
+    const cycle = Math.max(1, S.changeEvery);
+    const inCycle = (measure - S.countIn) % cycle;   // 0 .. cycle-1
 
     if (isFirst && inCycle === 0) newCard();
 
@@ -348,7 +365,11 @@
   function restartCycle() {
     // Called when settings change the rhythm; keeps playing but restarts the
     // measure count so the card cycle stays in sync.
-    if (metro.running) { metro.stop(); metro.start(); }
+    if (metro.running) { metro.stop(); metro.start(true); }
+  }
+  function nextCard() {
+    // While running, the restarted cycle deals the card on its first beat.
+    if (metro.running) restartCycle(); else newCard();
   }
 
   // ----------------------------------------------------------- bindings
@@ -361,7 +382,7 @@
 
   $('startBtn').addEventListener('click', toggle);
   $('revealBtn').addEventListener('click', reveal);
-  $('nextBtn').addEventListener('click', () => { newCard(); restartCycle(); });
+  $('nextBtn').addEventListener('click', nextCard);
 
   $('bpmInput').addEventListener('change', (e) => setBpm(e.target.value));
   $('bpmSlider').addEventListener('input', (e) => setBpm(e.target.value, true));
@@ -385,7 +406,7 @@
     r.checked = r.value === S.mode;
     r.addEventListener('change', () => {
       S.mode = r.value; saveSettings(); updateModeHint();
-      if (card) { newCard(); restartCycle(); }
+      if (card) nextCard();
       renderCard();
     });
   });
@@ -407,7 +428,8 @@
   }
   bindNumber('beatsInput', 'beats', 1, 12, () => { renderBeatDots(-1); restartCycle(); });
   bindNumber('changeEveryInput', 'changeEvery', 1, 16, restartCycle);
-  bindNumber('maxPosInput', 'maxPosition', 1, 15, () => { if (card) { newCard(); restartCycle(); } });
+  bindNumber('countInInput', 'countIn', 0, 4);
+  bindNumber('maxPosInput', 'maxPosition', 1, 15, () => { if (card) nextCard(); });
 
   function bindCheck(id, key, after) {
     const el = $(id);
@@ -426,7 +448,7 @@
   $('accidentalsInput').value = S.accidentals;
   $('accidentalsInput').addEventListener('change', (e) => {
     S.accidentals = e.target.value; saveSettings();
-    if (card) { newCard(); restartCycle(); }
+    if (card) nextCard();
   });
 
   document.querySelectorAll('input[name=form]').forEach((cb) => {
@@ -435,7 +457,7 @@
       S.forms[cb.value] = cb.checked;
       if (!Object.values(S.forms).some(Boolean)) { S.forms[cb.value] = true; cb.checked = true; }
       saveSettings();
-      if (card) { newCard(); restartCycle(); }
+      if (card) nextCard();
     });
   });
 
@@ -453,7 +475,7 @@
     if (typing || tag === 'select') return;
     if (e.code === 'Space') { e.preventDefault(); toggle(); }
     else if (e.key === 'r' || e.key === 'R') reveal();
-    else if (e.key === 'n' || e.key === 'N') { if (card) { newCard(); restartCycle(); } }
+    else if (e.key === 'n' || e.key === 'N') { if (card) nextCard(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); setBpm(S.bpm + (e.shiftKey ? 5 : 1)); }
     else if (e.key === 'ArrowDown') { e.preventDefault(); setBpm(S.bpm - (e.shiftKey ? 5 : 1)); }
   });
