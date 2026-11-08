@@ -1,0 +1,10 @@
+{
+  "name": "guitar-flash-metronome",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Metronome with CAGED flash cards: name the chord from form + position, or find the position from chord + form.",
+  "scripts": {
+    "test": "node --test",
+    "start": "npx --yes serve ."
+  }
+}

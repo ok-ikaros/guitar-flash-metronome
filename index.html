@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#121418">
+  <title>Guitar Flash Metronome</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app">
+    <header class="topbar">
+      <h1>Flash Metronome</h1>
+      <button id="settingsToggle" class="ghost" type="button" aria-expanded="true" aria-controls="settings">Settings</button>
+    </header>
+
+    <!-- The card -->
+    <section id="card" class="card" aria-live="polite">
+      <div class="card-top">
+        <span id="modeTag" class="tag">Name the chord</span>
+        <span id="measureTag" class="tag subtle">Measure 1 / 2</span>
+      </div>
+
+      <div class="card-body">
+        <div class="card-text">
+          <div id="prompt" class="prompt">Press Start</div>
+          <div id="answer" class="answer hidden"></div>
+        </div>
+        <div id="diagram" class="diagram" aria-hidden="true"></div>
+      </div>
+
+      <div id="beatDots" class="beat-dots" aria-hidden="true"></div>
+    </section>
+
+    <!-- Transport -->
+    <section class="transport">
+      <button id="startBtn" class="primary" type="button">Start</button>
+      <button id="revealBtn" type="button" disabled>Reveal <kbd>R</kbd></button>
+      <button id="nextBtn" type="button" disabled>Next <kbd>N</kbd></button>
+    </section>
+
+    <section class="tempo">
+      <div class="tempo-row">
+        <button id="bpmDown" class="round" type="button" aria-label="Slower">−</button>
+        <label class="bpm-field">
+          <input id="bpmInput" type="number" min="30" max="240" step="1" value="80" inputmode="numeric">
+          <span>BPM</span>
+        </label>
+        <button id="bpmUp" class="round" type="button" aria-label="Faster">+</button>
+        <button id="tapBtn" type="button">Tap</button>
+      </div>
+      <input id="bpmSlider" type="range" min="30" max="240" step="1" value="80" aria-label="Tempo">
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="settings">
+      <fieldset>
+        <legend>Mode</legend>
+        <div class="segmented" role="radiogroup" aria-label="Mode">
+          <label><input type="radio" name="mode" value="name" checked><span>Form + position → <b>name it</b></span></label>
+          <label><input type="radio" name="mode" value="find"><span>Name + form → <b>find the position</b></span></label>
+        </div>
+        <p class="hint" id="modeHint"></p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Rhythm</legend>
+        <div class="grid">
+          <label>Beats per measure
+            <input id="beatsInput" type="number" min="1" max="12" step="1" value="4" inputmode="numeric">
+          </label>
+          <label>New card every
+            <span class="with-unit"><input id="changeEveryInput" type="number" min="1" max="16" step="1" value="2" inputmode="numeric"><span>measures</span></span>
+          </label>
+          <label class="check"><input id="autoRevealInput" type="checkbox" checked> Auto-reveal on the last measure</label>
+          <label class="check"><input id="accentInput" type="checkbox" checked> Accent beat 1</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Chords</legend>
+        <div class="forms" role="group" aria-label="Forms in rotation">
+          <label><input type="checkbox" name="form" value="C" checked><span>C</span></label>
+          <label><input type="checkbox" name="form" value="A" checked><span>A</span></label>
+          <label><input type="checkbox" name="form" value="G" checked><span>G</span></label>
+          <label><input type="checkbox" name="form" value="E" checked><span>E</span></label>
+          <label><input type="checkbox" name="form" value="D" checked><span>D</span></label>
+        </div>
+        <div class="grid">
+          <label>Highest position
+            <input id="maxPosInput" type="number" min="1" max="15" step="1" value="12" inputmode="numeric">
+          </label>
+          <label>Naming
+            <select id="accidentalsInput">
+              <option value="sharps">Sharps (counting up)</option>
+              <option value="flats">Flats (counting down)</option>
+              <option value="mixed">Mixed (random each card)</option>
+            </select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Sound &amp; screen</legend>
+        <div class="grid">
+          <label class="check"><input id="soundInput" type="checkbox" checked> Click sound</label>
+          <label>Volume
+            <input id="volumeInput" type="range" min="0" max="1" step="0.05" value="0.6">
+          </label>
+          <label class="check"><input id="flashInput" type="checkbox" checked> Flash the screen on each beat</label>
+          <label class="check"><input id="wakeInput" type="checkbox" checked> Keep screen awake while running</label>
+        </div>
+      </fieldset>
+
+      <p class="hint keys"><kbd>Space</kbd> start / pause &nbsp; <kbd>R</kbd> reveal &nbsp; <kbd>N</kbd> next card &nbsp; <kbd>↑</kbd><kbd>↓</kbd> tempo</p>
+    </section>
+  </main>
+
+  <script src="chords.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
