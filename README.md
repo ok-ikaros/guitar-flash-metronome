@@ -22,10 +22,13 @@ Claude artifact.
 The metronome counts in one measure (configurable, 0–4) before the first
 card. The upcoming card is previewed in a "Next" strip during the count-in
 and while the current card is playing, so you can get your hand ready. The
-preview only shows the question side, never the answer. Each card lives for *N* measures (default 1). With **Auto-reveal** on, the
+preview only shows the question side, never the answer. The previous card
+is shown with its answer in a "Prev" strip, and **Back** (B or ←) re-deals
+it for a fresh measure if you fumbled it; the card you left becomes "Next"
+again. Each card lives for *N* measures (default 1). With **Auto-reveal** on, the
 answer appears on the last beat of the card's last measure, so in 4/4 you
 answer on beats 1 to 3, check on beat 4, and the next card arrives on the
-downbeat. You never have to stop the click. **Pause** (Space), **Reveal** (R) and **Next** (N) are
+downbeat. You never have to stop the click. **Pause** (Space), **Reveal** (R), **Back** (B) and **Next** (N) are
 there for when you do.
 
 ## Controls

@@ -29,6 +29,12 @@
         <div id="diagram" class="diagram" aria-hidden="true"></div>
       </div>
 
+      <div id="prevUp" class="next-up prev-up" hidden>
+        <span class="next-label">Prev</span>
+        <span id="prevText" class="next-text"></span>
+        <div id="prevDiagram" class="next-diagram" aria-hidden="true"></div>
+      </div>
+
       <div id="nextUp" class="next-up" hidden>
         <span class="next-label">Next</span>
         <span id="nextText" class="next-text"></span>
@@ -41,6 +47,7 @@
     <!-- Transport -->
     <section class="transport">
       <button id="startBtn" class="primary" type="button">Start</button>
+      <button id="backBtn" type="button" disabled>Back <kbd>B</kbd></button>
       <button id="revealBtn" type="button" disabled>Reveal <kbd>R</kbd></button>
       <button id="nextBtn" type="button" disabled>Next <kbd>N</kbd></button>
     </section>
@@ -121,7 +128,7 @@
         </div>
       </fieldset>
 
-      <p class="hint keys"><kbd>Space</kbd> start / pause &nbsp; <kbd>R</kbd> reveal &nbsp; <kbd>N</kbd> next card &nbsp; <kbd>↑</kbd><kbd>↓</kbd> tempo</p>
+      <p class="hint keys"><kbd>Space</kbd> start / pause &nbsp; <kbd>R</kbd> reveal &nbsp; <kbd>B</kbd> back &nbsp; <kbd>N</kbd> next &nbsp; <kbd>↑</kbd><kbd>↓</kbd> tempo</p>
     </section>
   </main>
 

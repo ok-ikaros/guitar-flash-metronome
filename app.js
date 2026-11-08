@@ -132,7 +132,11 @@
   // ---------------------------------------------------------------- flash card
   let card = null;        // current card
   let queued = null;      // the card after this one, shown as "next up"
+  let history = [];       // cards already dealt, most recent last
+  let forward = [];       // "next" previews set aside by Back, restored on the way forward
   let revealed = false;
+  let holdCard = false;   // restart the cycle without dealing (after Back)
+  const HISTORY_MAX = 20;
 
   function enabledForms() {
     const list = CE.FORM_ORDER.filter((f) => S.forms[f]);
@@ -163,9 +167,24 @@
   }
 
   function newCard() {
+    if (card) {
+      history.push(card);
+      if (history.length > HISTORY_MAX) history.shift();
+    }
     card = upcoming();
-    queued = makeCard(card);
+    queued = forward.length ? forward.pop() : makeCard(card);
     revealed = false;
+    renderCard();
+  }
+
+  /** Go back to the previous card; the one we leave becomes "next" again. */
+  function back() {
+    if (!history.length) return;
+    forward.push(queued);
+    queued = card;
+    card = history.pop();
+    revealed = false;
+    if (metro.running) { holdCard = true; restartCycle(); }
     renderCard();
   }
 
@@ -180,6 +199,23 @@
     return S.mode === 'name'
       ? `${c.form} Form ${CE.positionLabel(c.position)}`
       : `${c.name} Chord, ${c.form} Form`;
+  }
+
+  /** Answer side of a card, as text. */
+  function answerText(c) {
+    return S.mode === 'name'
+      ? `${c.name} Chord`
+      : c.positions.map(CE.positionLabel).join(' or ');
+  }
+
+  function renderPrev() {
+    const c = history[history.length - 1];
+    const el = $('prevUp');
+    $('backBtn').disabled = !c;
+    if (!c) { el.hidden = true; return; }
+    el.hidden = false;
+    $('prevText').innerHTML = `${questionText(c)} <b>${answerText(c)}</b>`;
+    $('prevDiagram').innerHTML = renderDiagram(c.form, c.position, { showPosition: true, compact: true });
   }
 
   function renderNextUp(c) {
@@ -199,6 +235,7 @@
     $('diagram').innerHTML = '';
     $('revealBtn').disabled = true;
     $('nextBtn').disabled = true;
+    renderPrev();
     renderNextUp(next);
   }
 
@@ -214,11 +251,13 @@
       diagram.innerHTML = '';
       $('revealBtn').disabled = true;
       $('nextBtn').disabled = true;
+      renderPrev();
       renderNextUp(null);
       return;
     }
     $('nextBtn').disabled = false;
     $('revealBtn').disabled = revealed;
+    renderPrev();
     renderNextUp(queued);
 
     if (S.mode === 'name') {
@@ -351,7 +390,10 @@
     const cycle = Math.max(1, S.changeEvery);
     const inCycle = (measure - S.countIn) % cycle;   // 0 .. cycle-1
 
-    if (isFirst && inCycle === 0) newCard();
+    if (isFirst && inCycle === 0) {
+      if (holdCard) holdCard = false;   // Back already put the card up
+      else newCard();
+    }
 
     // Reveal on the last beat of the card's last measure.
     if (S.autoReveal && !revealed && inCycle === cycle - 1 && beat === S.beats - 1
@@ -381,6 +423,7 @@
 
   // ----------------------------------------------------------- transport
   function start() {
+    holdCard = false;
     metro.start();
     $('startBtn').textContent = 'Pause';
     $('startBtn').classList.remove('primary');
@@ -401,7 +444,8 @@
     if (metro.running) { metro.stop(); metro.start(true); }
   }
   function nextCard(discardQueued) {
-    if (discardQueued) queued = null;   // settings changed: the preview no longer applies
+    if (discardQueued) { queued = null; forward = []; }   // settings changed: previews no longer apply
+    holdCard = false;
     // While running, the restarted cycle deals the card on its first beat.
     if (metro.running) restartCycle(); else newCard();
   }
@@ -417,6 +461,7 @@
   $('startBtn').addEventListener('click', toggle);
   $('revealBtn').addEventListener('click', reveal);
   $('nextBtn').addEventListener('click', () => nextCard(false));
+  $('backBtn').addEventListener('click', back);
 
   $('bpmInput').addEventListener('change', (e) => setBpm(e.target.value));
   $('bpmSlider').addEventListener('input', (e) => setBpm(e.target.value, true));
@@ -454,7 +499,8 @@
     const el = $(id);
     el.value = S[key];
     el.addEventListener('change', () => {
-      S[key] = clamp(parseInt(el.value, 10) || defaults[key], lo, hi);
+      const n = parseInt(el.value, 10);
+      S[key] = clamp(Number.isNaN(n) ? defaults[key] : n, lo, hi);
       el.value = S[key];
       saveSettings();
       if (after) after();
@@ -510,6 +556,7 @@
     if (e.code === 'Space') { e.preventDefault(); toggle(); }
     else if (e.key === 'r' || e.key === 'R') reveal();
     else if (e.key === 'n' || e.key === 'N') { if (card) nextCard(); }
+    else if (e.key === 'b' || e.key === 'B' || e.key === 'ArrowLeft') back();
     else if (e.key === 'ArrowUp') { e.preventDefault(); setBpm(S.bpm + (e.shiftKey ? 5 : 1)); }
     else if (e.key === 'ArrowDown') { e.preventDefault(); setBpm(S.bpm - (e.shiftKey ? 5 : 1)); }
   });
