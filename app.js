@@ -8,9 +8,10 @@
 
   // ------------------------------------------------------------------ settings
   const defaults = {
+    v: 2,                    // settings version, for migrations
     bpm: 80,
     beats: 4,
-    changeEvery: 2,
+    changeEvery: 1,
     countIn: 1,              // measures of count-in before the first card
     mode: 'name',            // 'name' | 'find'
     accidentals: 'sharps',   // 'sharps' | 'flats' | 'mixed'
@@ -31,7 +32,10 @@
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return structuredClone(defaults);
       const saved = JSON.parse(raw);
-      return { ...structuredClone(defaults), ...saved, forms: { ...defaults.forms, ...(saved.forms || {}) } };
+      // v1 defaulted to a 2-measure card because the reveal took a whole
+      // measure; the reveal is now on the last beat, so one measure is enough.
+      if (!saved.v && saved.changeEvery === 2) saved.changeEvery = 1;
+      return { ...structuredClone(defaults), ...saved, forms: { ...defaults.forms, ...(saved.forms || {}) }, v: defaults.v };
     } catch {
       return structuredClone(defaults);
     }
@@ -349,10 +353,10 @@
 
     if (isFirst && inCycle === 0) newCard();
 
-    if (S.autoReveal && !revealed) {
-      const lastMeasure = inCycle === cycle - 1;
-      if (cycle > 1 && isFirst && lastMeasure) reveal();
-      else if (cycle === 1 && S.beats > 1 && beat === S.beats - 1) reveal();
+    // Reveal on the last beat of the card's last measure.
+    if (S.autoReveal && !revealed && inCycle === cycle - 1 && beat === S.beats - 1
+        && !(cycle === 1 && S.beats === 1)) {
+      reveal();
     }
 
     $('measureTag').textContent = `Measure ${inCycle + 1} / ${cycle}`;
@@ -442,7 +446,7 @@
   });
   function updateModeHint() {
     $('modeHint').textContent = S.mode === 'name'
-      ? 'You see the form and the bar position. Say the chord name out loud; the answer appears on the last measure.'
+      ? 'You see the form and the bar position. Say the chord name out loud; the answer appears on the last beat.'
       : 'You see the chord name and the form. Bar it where it belongs; the fret number is hidden until the reveal.';
   }
 
