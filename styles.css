@@ -152,6 +152,26 @@ kbd {
 
 .diagram svg { width: 100%; height: auto; display: block; }
 
+.next-up {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--panel-2);
+  border: 1px dashed var(--line);
+}
+.next-up[hidden] { display: none; }
+.next-label {
+  font-size: 11px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.next-text { flex: 1; min-width: 0; font-weight: 600; font-size: 15px; }
+.next-diagram { width: 54px; flex: none; }
+.next-diagram svg { display: block; width: 100%; height: auto; }
+
 .beat-dots { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
 .beat-dots span {
   width: 12px; height: 12px; border-radius: 50%;

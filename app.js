@@ -127,6 +127,7 @@
 
   // ---------------------------------------------------------------- flash card
   let card = null;        // current card
+  let queued = null;      // the card after this one, shown as "next up"
   let revealed = false;
 
   function enabledForms() {
@@ -135,7 +136,7 @@
   }
   function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
-  function makeCard() {
+  function makeCard(prev) {
     const forms = enabledForms();
     let next;
     for (let tries = 0; tries < 20; tries++) {
@@ -143,16 +144,23 @@
       const position = Math.floor(Math.random() * (S.maxPosition + 1));
       const acc = S.accidentals === 'mixed' ? pick(['sharps', 'flats']) : S.accidentals;
       next = { form, position, acc, name: CE.chordName(form, position, acc) };
-      if (!card) break;
-      if (S.mode === 'name' && (next.form !== card.form || next.position !== card.position)) break;
-      if (S.mode === 'find' && (next.form !== card.form || next.name !== card.name)) break;
+      if (!prev) break;
+      if (S.mode === 'name' && (next.form !== prev.form || next.position !== prev.position)) break;
+      if (S.mode === 'find' && (next.form !== prev.form || next.name !== prev.name)) break;
     }
     next.positions = CE.positionsFor(next.form, next.name, S.maxPosition);
     return next;
   }
 
+  /** The upcoming card, generated once and kept until it is dealt. */
+  function upcoming() {
+    if (!queued) queued = makeCard(card);
+    return queued;
+  }
+
   function newCard() {
-    card = makeCard();
+    card = upcoming();
+    queued = makeCard(card);
     revealed = false;
     renderCard();
   }
@@ -163,7 +171,23 @@
     renderCard();
   }
 
+  /** Question side of a card, as text, with no answer in it. */
+  function questionText(c) {
+    return S.mode === 'name'
+      ? `${c.form} Form ${CE.positionLabel(c.position)}`
+      : `${c.name} Chord, ${c.form} Form`;
+  }
+
+  function renderNextUp(c) {
+    const el = $('nextUp');
+    if (!c) { el.hidden = true; return; }
+    el.hidden = false;
+    $('nextText').textContent = questionText(c);
+    $('nextDiagram').innerHTML = renderDiagram(c.form, c.position, { showPosition: S.mode === 'name', compact: true });
+  }
+
   function renderCountIn(beat) {
+    const next = upcoming();
     $('modeTag').textContent = 'Count-in';
     $('measureTag').textContent = 'Get ready';
     $('prompt').innerHTML = `${beat + 1}<small>${S.mode === 'name' ? 'Name the chord' : 'Find the position'}</small>`;
@@ -171,6 +195,7 @@
     $('diagram').innerHTML = '';
     $('revealBtn').disabled = true;
     $('nextBtn').disabled = true;
+    renderNextUp(next);
   }
 
   function renderCard() {
@@ -185,10 +210,12 @@
       diagram.innerHTML = '';
       $('revealBtn').disabled = true;
       $('nextBtn').disabled = true;
+      renderNextUp(null);
       return;
     }
     $('nextBtn').disabled = false;
     $('revealBtn').disabled = revealed;
+    renderNextUp(queued);
 
     if (S.mode === 'name') {
       // Question: the form and the position. Answer: the chord name.
@@ -220,13 +247,15 @@
   // 6 strings, low E on the left. 5 frets shown. Position 0 draws the nut and
   // open-string circles, like the "A Form Open" diagram in the chapter; any
   // other position draws the bar with the position number beside it.
-  function renderDiagram(form, position, { showPosition }) {
+  function renderDiagram(form, position, { showPosition, compact = false }) {
     const shape = CE.FORMS[form];
     const W = 160, H = 200;
     const x0 = 32, dx = 20;           // string spacing
     const yTop = 42, dy = 30, rows = 5;
     const yBottom = yTop + dy * rows;
-    const barred = position > 0;
+    // With the position hidden, always draw the movable (barred) shape so an
+    // open-position card does not give itself away by showing the nut.
+    const barred = position > 0 || !showPosition;
     const sx = (i) => x0 + i * dx;
     const rowY = (r) => yTop + (r - 0.5) * dy; // r = 1..rows
 
@@ -271,8 +300,8 @@
         return;
       }
       const r = barred ? fret + 1 : fret;
-      s += `<circle class="dot" cx="${x}" cy="${rowY(r)}" r="9"/>`;
-      s += `<text class="num" x="${x}" y="${rowY(r)}">${shape.fingers[i]}</text>`;
+      s += `<circle class="dot" cx="${x}" cy="${rowY(r)}" r="${compact ? 7 : 9}"/>`;
+      if (!compact) s += `<text class="num" x="${x}" y="${rowY(r)}">${shape.fingers[i]}</text>`;
     });
     s += '</svg>';
     return s;
@@ -367,7 +396,8 @@
     // measure count so the card cycle stays in sync.
     if (metro.running) { metro.stop(); metro.start(true); }
   }
-  function nextCard() {
+  function nextCard(discardQueued) {
+    if (discardQueued) queued = null;   // settings changed: the preview no longer applies
     // While running, the restarted cycle deals the card on its first beat.
     if (metro.running) restartCycle(); else newCard();
   }
@@ -382,7 +412,7 @@
 
   $('startBtn').addEventListener('click', toggle);
   $('revealBtn').addEventListener('click', reveal);
-  $('nextBtn').addEventListener('click', nextCard);
+  $('nextBtn').addEventListener('click', () => nextCard(false));
 
   $('bpmInput').addEventListener('change', (e) => setBpm(e.target.value));
   $('bpmSlider').addEventListener('input', (e) => setBpm(e.target.value, true));
@@ -406,7 +436,7 @@
     r.checked = r.value === S.mode;
     r.addEventListener('change', () => {
       S.mode = r.value; saveSettings(); updateModeHint();
-      if (card) nextCard();
+      if (card) nextCard(true);
       renderCard();
     });
   });
@@ -429,7 +459,7 @@
   bindNumber('beatsInput', 'beats', 1, 12, () => { renderBeatDots(-1); restartCycle(); });
   bindNumber('changeEveryInput', 'changeEvery', 1, 16, restartCycle);
   bindNumber('countInInput', 'countIn', 0, 4);
-  bindNumber('maxPosInput', 'maxPosition', 1, 15, () => { if (card) nextCard(); });
+  bindNumber('maxPosInput', 'maxPosition', 1, 15, () => { if (card) nextCard(true); });
 
   function bindCheck(id, key, after) {
     const el = $(id);
@@ -448,7 +478,7 @@
   $('accidentalsInput').value = S.accidentals;
   $('accidentalsInput').addEventListener('change', (e) => {
     S.accidentals = e.target.value; saveSettings();
-    if (card) nextCard();
+    if (card) nextCard(true);
   });
 
   document.querySelectorAll('input[name=form]').forEach((cb) => {
@@ -457,7 +487,7 @@
       S.forms[cb.value] = cb.checked;
       if (!Object.values(S.forms).some(Boolean)) { S.forms[cb.value] = true; cb.checked = true; }
       saveSettings();
-      if (card) nextCard();
+      if (card) nextCard(true);
     });
   });
 

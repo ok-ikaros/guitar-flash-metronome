@@ -20,7 +20,9 @@ Claude artifact.
 | **Find the position** | Chord name + form, diagram with the fret number hidden | Where to bar it | The position (both of them if the range goes past the 12th fret) |
 
 The metronome counts in one measure (configurable, 0–4) before the first
-card. Each card lives for *N* measures (default 2). With **Auto-reveal** on, the
+card. The upcoming card is previewed in a "Next" strip during the count-in
+and while the current card is playing, so you can get your hand ready. The
+preview only shows the question side, never the answer. Each card lives for *N* measures (default 2). With **Auto-reveal** on, the
 answer appears on the last measure of the card, so you answer on measure 1,
 check on measure 2, and the next card arrives on the next downbeat. You never
 have to stop the click. **Pause** (Space), **Reveal** (R) and **Next** (N) are
