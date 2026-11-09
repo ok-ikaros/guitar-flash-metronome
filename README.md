@@ -14,22 +14,25 @@ Claude artifact.
 
 ## Two modes
 
-| Mode | You see | You answer | Reveal shows |
+| Mode | Next strip shows | You work out | Card shows |
 | --- | --- | --- | --- |
-| **Name it** | Form + position, with the fret diagram | The chord name | The chord name |
-| **Find the position** | Chord name + form, diagram with the fret number hidden | Where to bar it | The position (both of them if the range goes past the 12th fret) |
+| **Name it** | Form + position, with the shape | The chord name | Form, position, diagram and the chord name |
+| **Find the position** | Chord name + form, shape with the fret number hidden | Where to bar it | Chord name, form, diagram and the position (both of them if the range goes past the 12th fret) |
 
 The metronome counts in one measure (configurable, 0–4) before the first
-card. The upcoming card is previewed in a "Next" strip during the count-in
-and while the current card is playing, so you can get your hand ready. The
-preview only shows the question side, never the answer. The previous card
-is shown with its answer in a "Prev" strip, and **Back** (B or ←) re-deals
-it for a fresh measure if you fumbled it; the card you left becomes "Next"
-again. Each card lives for *N* measures (default 1). With **Auto-reveal** on, the
-answer appears on the last beat of the card's last measure, so in 4/4 you
-answer on beats 1 to 3, check on beat 4, and the next card arrives on the
-downbeat. You never have to stop the click. **Pause** (Space), **Reveal** (R), **Back** (B) and **Next** (N) are
-there for when you do.
+card, and again when you resume after a pause, landing back on the card you
+paused on.
+
+The **Next** strip is the quiz: it shows the coming card's question side
+only (form + position, or chord name + form), and you work out the answer
+while the current card plays. When the card lands it shows the answer, so
+you confirm and move on without stopping the click. Turn off **Show the
+answer on the card** to hide it until you press **Reveal** (R).
+
+Each card lasts *N* measures (default 1). The previous card is shown with
+its answer in a **Prev** strip, and **Back** (B or ←) re-deals it for a
+fresh measure if you fumbled it; the card you left becomes "Next" again.
+**Pause** (Space) and **Next** (N) round out the transport.
 
 ## Controls
 

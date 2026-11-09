@@ -33,7 +33,7 @@
       if (!raw) return structuredClone(defaults);
       const saved = JSON.parse(raw);
       // v1 defaulted to a 2-measure card because the reveal took a whole
-      // measure; the reveal is now on the last beat, so one measure is enough.
+      // measure; the answer now shows with the card, so one measure is enough.
       if (!saved.v && saved.changeEvery === 2) saved.changeEvery = 1;
       return { ...structuredClone(defaults), ...saved, forms: { ...defaults.forms, ...(saved.forms || {}) }, v: defaults.v };
     } catch {
@@ -173,7 +173,7 @@
     }
     card = upcoming();
     queued = forward.length ? forward.pop() : makeCard(card);
-    revealed = false;
+    revealed = S.autoReveal;
     renderCard();
   }
 
@@ -183,7 +183,7 @@
     forward.push(queued);
     queued = card;
     card = history.pop();
-    revealed = false;
+    revealed = S.autoReveal;
     if (metro.running) { holdCard = true; restartCycle(); }
     renderCard();
   }
@@ -227,7 +227,7 @@
   }
 
   function renderCountIn(beat) {
-    const next = upcoming();
+    const next = holdCard && card ? card : upcoming();
     $('modeTag').textContent = 'Count-in';
     $('measureTag').textContent = 'Get ready';
     $('prompt').innerHTML = `${beat + 1}<small>${S.mode === 'name' ? 'Name the chord' : 'Find the position'}</small>`;
@@ -391,14 +391,8 @@
     const inCycle = (measure - S.countIn) % cycle;   // 0 .. cycle-1
 
     if (isFirst && inCycle === 0) {
-      if (holdCard) holdCard = false;   // Back already put the card up
+      if (holdCard) { holdCard = false; renderCard(); }   // keep the card we had (Back, or resume)
       else newCard();
-    }
-
-    // Reveal on the last beat of the card's last measure.
-    if (S.autoReveal && !revealed && inCycle === cycle - 1 && beat === S.beats - 1
-        && !(cycle === 1 && S.beats === 1)) {
-      reveal();
     }
 
     $('measureTag').textContent = `Measure ${inCycle + 1} / ${cycle}`;
@@ -423,7 +417,7 @@
 
   // ----------------------------------------------------------- transport
   function start() {
-    holdCard = false;
+    holdCard = !!card;   // resuming: count in, then keep the card we paused on
     metro.start();
     $('startBtn').textContent = 'Pause';
     $('startBtn').classList.remove('primary');
@@ -491,8 +485,8 @@
   });
   function updateModeHint() {
     $('modeHint').textContent = S.mode === 'name'
-      ? 'You see the form and the bar position. Say the chord name out loud; the answer appears on the last beat.'
-      : 'You see the chord name and the form. Bar it where it belongs; the fret number is hidden until the reveal.';
+      ? 'The Next strip shows the coming form and position. Work out the chord name before it lands; the card then shows it.'
+      : 'The Next strip shows the coming chord name and form. Find where to bar it before it lands; the card then shows the position.';
   }
 
   function bindNumber(id, key, lo, hi, after) {
@@ -516,7 +510,7 @@
     el.checked = !!S[key];
     el.addEventListener('change', () => { S[key] = el.checked; saveSettings(); if (after) after(); });
   }
-  bindCheck('autoRevealInput', 'autoReveal');
+  bindCheck('autoRevealInput', 'autoReveal', () => { if (card) { revealed = S.autoReveal; renderCard(); } });
   bindCheck('accentInput', 'accent');
   bindCheck('soundInput', 'sound');
   bindCheck('flashInput', 'flash');
